@@ -1,6 +1,12 @@
-ฟังชั่นค้นหา
-ไม่ยุ่งกับ DB
-เก็บค่าจาก lineEdit
-เอาไปเทียบค่าใน column#1
-setFocusrow ที่เจอค่าที่เท่ากัน
-หากใส่ค่าว่างให้ขึ้นเตือน
+for i in range(totleRow):
+                    if self.tableWidget.item(i,1).text() == temp:
+                        foundStatus = True   
+                        break
+                    else:
+                        foundStatus = False                      
+                if foundStatus == True:
+                    self.tableWidget.selectRow(i)
+                else:
+                    print(str(time.strftime("%H:%M:%S : ", time.localtime())
+                              ) + 'Can not find number in table.')
+                    self.openDialog('ไม่พบหมายเลขที่ต้องการ')
