@@ -1,2 +1,0 @@
-# qtTest
-demo python qt
