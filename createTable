@@ -1,0 +1,62 @@
+CREATE TABLE "queue" (
+	"id"	INTEGER,
+	"q_number"	TEXT,
+	"q_enter_time"	TEXT,
+	"q_call_time"	TEXT,
+	"q_call_status"	TEXT,
+	"q_destination"	TEXT,
+	PRIMARY KEY("id" AUTOINCREMENT)
+);
+
+CREATE TABLE "queue" (
+	"id"	INTEGER,
+	"q_number"	TEXT NOT NULL,
+	"q_enter_time"	TEXT NOT NULL,
+	"q_call_time"	TEXT,
+	"q_call_status"	INTEGER DEFAULT 0,
+	"q_destination"	TEXT,
+	PRIMARY KEY("id" AUTOINCREMENT)
+);
+
+def createDatabase(self):
+        conn = None
+        try:
+            conn = sqlite3.connect('ini.db')
+            print(sqlite3.version)
+        except Error as e:
+            print('Error' + e)
+        finally:
+            if conn:
+                conn.close()
+
+
+def loadData(self):
+        conn = sqlite3.Connection('ex1')
+        query = 'SELECT * FROM queue;'
+        try:
+            result = conn.execute(query)
+            self.tableWidget.setRowCount(0)
+            for row_number,row_data in enumerate(result):
+                self.tableWidget.insertRow(row_number)
+                for column_number,data in enumerate(row_data):
+                    self.tableWidget.setItem(row_number,column_number,QtWidgets.QTableWidgetItem(str(data)))
+            print('Connecting success.')
+        except(Error) as e:
+            print('ERROR ' + e)
+        conn.close()
+
+def writeData(self):
+        conn = sqlite3.Connection('ex1')
+        q_number = self.lineEdit.text()
+        named_tuple = time.localtime()  # get struct_time
+        q_enter_time = time.strftime("%H:%M:%S", named_tuple)
+        print(type(q_enter_time))
+        try:
+            query = 'INSERT INTO queue(q_number,q_enter_time) VALUES(?,?)'
+            cursor = conn.cursor()
+            cursor.execute(query,[q_number,q_enter_time])
+            conn.commit()
+            print('Data saved successfully.')
+        except(Error) as e:
+            print('ERROR ')
+        conn.close()
