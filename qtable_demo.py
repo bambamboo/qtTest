@@ -1,9 +1,9 @@
 import sys
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import QAbstractTableModel, Qt
 from PyQt5.QtSql import QSqlDatabase, QSqlTableModel
 from PyQt5.QtWidgets import (
-    QApplication,
+    QAbstractItemView, QApplication, QHeaderView,
     QMainWindow,
     QMessageBox,
     QTableView,
@@ -23,12 +23,20 @@ class Contacts(QMainWindow):
         self.model.setHeaderData(2, Qt.Horizontal, "Enter Time")
         self.model.setHeaderData(3, Qt.Horizontal, "Call Time")
         self.model.setHeaderData(4, Qt.Horizontal, "Status")
+        
         self.model.setHeaderData(5, Qt.Horizontal, "Destination")
 
         self.model.select()
         # Set up the view
         self.view = QTableView()
         self.view.setModel(self.model)
+        self.view.setColumnHidden(0,True)
+        self.view.setCornerButtonEnabled(False)
+        #self.view.setEditTriggers(QAbstractItemView())
+        #self.headerView = QHeaderView()
+        #self.view.setHorizontalHeader()
+        #print(str(self.view.editTriggers()))
+        
         self.view.resizeColumnsToContents()
         self.setCentralWidget(self.view)
 

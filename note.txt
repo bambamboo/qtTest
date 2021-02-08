@@ -10,3 +10,9 @@ for i in range(totleRow):
                     print(str(time.strftime("%H:%M:%S : ", time.localtime())
                               ) + 'Can not find number in table.')
                     self.openDialog('ไม่พบหมายเลขที่ต้องการ')
+
+ไอเดียวิธีที่จะ unedit บาง column
+-หา index ของ column ที่ต้องการ
+-setTrigger ให้ยิ่งไปที่ no edit
+-มีอะไรบางอย่างเกี่ยวกับ flag
+-หาวิธียัด comboBox เข้าไปใน cell

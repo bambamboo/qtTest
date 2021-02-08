@@ -27,16 +27,17 @@ class Contacts(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("QTableView Example")
-        self.resize(415, 200)
+        self.resize(800, 600)
         # Set up the model
         self.model = QSqlTableModel(self)
-        self.model.setTable("contacts")
+        self.model.setTable("queue")
         self.model.setEditStrategy(QSqlTableModel.OnFieldChange)
-        self.model.setHeaderData(0, Qt.Horizontal, "q_name")
-        self.model.setHeaderData(1, Qt.Horizontal, "q_time_enter")
-        self.model.setHeaderData(2, Qt.Horizontal, "q_time_call")
-        self.model.setHeaderData(3, Qt.Horizontal, "q_status")
-        self.model.setHeaderData(4, Qt.Horizontal, "q_destination")
+        self.model.setHeaderData(0, Qt.Horizontal, "q_id")
+        self.model.setHeaderData(1, Qt.Horizontal, "q_name")
+        self.model.setHeaderData(2, Qt.Horizontal, "q_time_enter")
+        self.model.setHeaderData(3, Qt.Horizontal, "q_time_call")
+        self.model.setHeaderData(4, Qt.Horizontal, "q_status")
+        self.model.setHeaderData(5, Qt.Horizontal, "q_destination")
 
         self.model.select()
         # Set up the view
