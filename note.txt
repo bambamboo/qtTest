@@ -16,3 +16,11 @@ for i in range(totleRow):
 -setTrigger ให้ยิ่งไปที่ no edit
 -มีอะไรบางอย่างเกี่ยวกับ flag
 -หาวิธียัด comboBox เข้าไปใน cell
+
+ไอเดียวิธีที่จะ get ค่าจาก DB ยัดเข้า comboBox
+-get ค่าจาก sqlModel
+-พักไว้
+-ยัดเข้า tuple
+-เรียกค่าออกมายัดเข้า comboBox
+-จากนั้นทำ custom combobox class จากข้อมูลด้านบน
+-ให้ QtableView สร้างออปเจ็คจาก class custom combobox แล้วยัดเข้า ตาราง

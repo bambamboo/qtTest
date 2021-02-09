@@ -18,6 +18,28 @@ CREATE TABLE "queue" (
 	PRIMARY KEY("id" AUTOINCREMENT)
 );
 
+
+CREATE TABLE "queue" (
+	"q_id"	INTEGER,
+	"q_number"	TEXT NOT NULL,
+	"q_enter_time"	TEXT NOT NULL,
+	"q_call_time"	TEXT,
+	"q_call_status"	INTEGER NOT NULL DEFAULT 0,
+	"des_id"	INTEGER NOT NULL DEFAULT 0,
+	PRIMARY KEY("q_id" AUTOINCREMENT),
+    FOREIGN KEY (des_id) 
+    REFERENCES destination (des_id)
+        ON UPDATE RESTRICT
+        ON DELETE RESTRICT
+);
+
+CREATE TABLE "destination" (
+    "des_id" INTEGER,
+    "des_name" TEXT NOT NULL,
+    PRIMARY KEY("des_id" AUTOINCREMENT)
+);
+
+
 def createDatabase(self):
         conn = None
         try:
