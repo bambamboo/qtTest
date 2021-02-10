@@ -1,12 +1,14 @@
 import sys
 
-from PyQt5.QtCore import QAbstractTableModel, Qt
-from PyQt5.QtSql import QSqlDatabase, QSqlQuery, QSqlQueryModel, QSqlTableModel
+from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt
+from PyQt5.QtSql import QSqlDatabase, QSqlQuery, QSqlQueryModel, QSqlRelation, QSqlRelationalDelegate, QSqlRelationalTableModel, QSqlTableModel
 from PyQt5.QtWidgets import (
     QAbstractItemView, QApplication, QComboBox, QHeaderView,
     QMainWindow,
     QMessageBox,
-    QTableView,
+    QTableView, 
+    QWidget,
+    QAbstractItemView
 )
 
 class Contacts(QMainWindow):
@@ -16,20 +18,25 @@ class Contacts(QMainWindow):
         self.resize(800, 600)
 
         # Set up the model
-        self.model = QSqlTableModel(self)
+        self.model = QSqlRelationalTableModel(self)
         self.model.setTable("queue")
         self.model.setEditStrategy(QSqlTableModel.OnFieldChange)
         self.model.setHeaderData(0, Qt.Horizontal, "ID")
-        self.model.setHeaderData(1, Qt.Horizontal, "Number")
+        self.model.setHeaderData(1, Qt.Horizontal, "Number")    
         self.model.setHeaderData(2, Qt.Horizontal, "Enter Time")
         self.model.setHeaderData(3, Qt.Horizontal, "Call Time")
         self.model.setHeaderData(4, Qt.Horizontal, "Status")       
         self.model.setHeaderData(5, Qt.Horizontal, "Destination")
+
+        # ใช้ QSqlRelation อ่านคีย์นอกจากในตาราง queue แล้ว maps เข้ากับตาราง destination เลือก index กับ text ที่ต้องการแสดงในตาราง queue
+        self.model.setRelation(5,QSqlRelation("destination","des_id","des_name"))
+
         self.model.select()
 
         # Set up the view
         self.view = QTableView()
         self.view.setModel(self.model)
+        self.view.setItemDelegate(QSqlRelationalDelegate(self.view))
         self.view.setColumnHidden(0,True)
         self.view.setCornerButtonEnabled(False)
         #self.view.setEditTriggers(QAbstractItemView())
@@ -38,21 +45,26 @@ class Contacts(QMainWindow):
         #print(str(self.view.editTriggers()))       
         self.view.resizeColumnsToContents()
 
-        i = self.view.model().index(1,5)
-
         # self.cbxModel = QSqlQueryModel(self)
         # self.cbxModel.setQuery = "SELECT des_name FROM destination"
         # self.cbxModel.query()
-        self.cbxModel = QSqlTableModel(self)
-        self.cbxModel.setTable("destination")
-        self.cbxModel.select()
 
-        self.cbxView = QComboBox()
-        self.cbxView.setModel(self.cbxModel)
+        # สร้าง comboboxmodel ดึงข้อมูลจาก ex1.destination
+        #self.cbxModel = QSqlTableModel(self)
+        #self.cbxModel.setTable("destination")
+        #self.cbxModel.select()
+
+        # สร้าง comboboxview
+        #self.cbxView = QComboBox()
+        #self.cbxView.setModel(self.cbxModel)
         # เลือก column ที่จะมาแสดง
-        self.cbxView.setModelColumn(1)
-        
-        self.view.setIndexWidget(i,self.cbxView)
+        #self.cbxView.setModelColumn(1)
+
+        # วาด comboboxview ลงบน tableview ติดปัญหา comboboxview จะวาดลงใน record สุดท้ายเสมอ
+        # for i in range(self.model.rowCount()):
+        #     i = self.view.model().index(1, 5)
+        #     self.view.setIndexWidget(i,self.cbxView)
+
         self.setCentralWidget(self.view)
 
 

@@ -35,7 +35,7 @@ class Ui_MainWindow(object):
         conn.close()
         self.lineEdit.setText('')
         self.tableWidget.selectRow(self.tableWidget.rowCount() - 1)
-        self.paintTable()
+        #self.paintTable()
 
     def writeData(self):
         conn = sqlite3.Connection('ex1')
