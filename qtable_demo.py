@@ -80,7 +80,6 @@ def createConnection():
         return False
     return True
 
-
 app = QApplication(sys.argv)
 if not createConnection():
     sys.exit(1)

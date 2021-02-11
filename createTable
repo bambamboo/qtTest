@@ -30,7 +30,7 @@ CREATE TABLE "queue" (
     FOREIGN KEY (des_id) 
     REFERENCES destination (des_id)
         ON UPDATE RESTRICT
-        ON DELETE RESTRICT
+        ON DELETE RESTRICTS
 );
 
 CREATE TABLE "destination" (
