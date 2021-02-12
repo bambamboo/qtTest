@@ -1,5 +1,9 @@
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt
+import time
+from PyQt5 import QtGui, QtWidgets, QtCore
+from PyQt5 import QtSql
+from PyQt5.QtCore import (
+    QAbstractTableModel, 
+    QModelIndex, Qt)
 from PyQt5.QtSql import (
     QSqlDatabase,
     QSqlQuery,
@@ -13,7 +17,7 @@ from PyQt5.QtWidgets import (
     QAbstractItemView,
     QApplication,
     QComboBox,
-    QHeaderView,
+    QHeaderView, QListView,
     QMainWindow,
     QMessageBox,
     QTableView,
@@ -85,16 +89,9 @@ class Ui_MainWindow(object):
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
+        # เรียกฟังชั่นเพื่อโหลด model ลง table
         self.loadData()
-        # self.model = QSqlRelationalTableModel()
-        # self.model.setTable('queue')
-        # self.model.setEditStrategy(QSqlTableModel.OnFieldChange)
-        # self.model.setHeaderData(0, Qt.Horizontal, 'ID')
-        # self.model.setHeaderData(1, Qt.Horizontal, "Number")
-        # self.model.setHeaderData(2, Qt.Horizontal, "Enter Time")
-        # self.model.setHeaderData(3, Qt.Horizontal, "Call Time")
-        # self.model.setHeaderData(4, Qt.Horizontal, "Status")
-        # self.model.setHeaderData(5, Qt.Horizontal, "Destination")
+        self.btn_add.clicked.connect(self.insertData)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -115,25 +112,84 @@ class Ui_MainWindow(object):
         self.actionDrop_tablel.setText(_translate("MainWindow", "Drop tablel"))
 
     def loadData(self):
+        # สร้าง model เรียก data จาก database
+        # ใช้ QSqlRelationalTableModel สำหรับตารางที่มีคีย์นอก
         self.model = QSqlRelationalTableModel()
         self.model.setTable('queue')
         self.model.setEditStrategy(QSqlTableModel.OnFieldChange)
-        self.model.setHeaderData(0,Qt.Horizontal,'ID')
+        self.model.setHeaderData(0, Qt.Horizontal, 'ID')
         self.model.setHeaderData(1, Qt.Horizontal, "Number")
         self.model.setHeaderData(2, Qt.Horizontal, "Enter Time")
         self.model.setHeaderData(3, Qt.Horizontal, "Call Time")
         self.model.setHeaderData(4, Qt.Horizontal, "Status")
         self.model.setHeaderData(5, Qt.Horizontal, "Destination")
+
+        # ให้ column#5 เป็นคีย์นอกดึงตารางนอกมาแสดง
         self.model.setRelation(5, QSqlRelation(
             "destination", "des_id", "des_name"))
         self.model.select()
 
+        # ให้ tableView เลือก data จาก model ไปแสดง
         self.tableView.setModel(self.model)
         self.tableView.setItemDelegate(QSqlRelationalDelegate(self.tableView))
         self.tableView.setColumnHidden(0, True)
         self.tableView.setCornerButtonEnabled(False)
 
+        testText = 'des_name'
+        self.desModel = QSqlQueryModel()
+        selectQuery = QSqlQuery()
+        selectQuery.prepare(f'SELECT {testText} FROM destination')
+        print('QUERY = ' + str(selectQuery.lastQuery()))
+        if selectQuery.exec():
+            self.desModel.setQuery(selectQuery)      
+            print('SELECT des_name COMPLETE')
+            self.comboBox.setModel(self.desModel)
+        else:
+            print('SELECT FALSE = ' + selectQuery.lastError().text())
+        
+    def insertData(self):
+        q_number = self.lineEdit.text()
+        q_localtime = time.localtime()
+        q_enter_time = time.strftime("%H:%M:%S",q_localtime)
+        #q_number = 'text'
+        #q_enter_time = 'texttext'
+        des_id = self.getDestination_id()
+
+        insertQuery = QSqlQuery()
+        insertQuery.prepare("INSERT INTO queue " + "(q_number,q_enter_time,des_id) " +
+                            "VALUES " + f"({q_number},{q_enter_time},{des_id})")
+        # ใช้ f-string แล้วไม่ได้จะลองเปลี่ยนเป็นแบบเดิม
+        # insertQuery.prepare("INSERT INTO (q_number,q_enter_time,des_id) VALUE (?,?,?)")
+        # insertQuery.addBindValue(q_number)
+        # insertQuery.addBindValue(q_enter_time)
+        # insertQuery.addBindValue(des_id)
+
+        print('Query = ' + insertQuery.lastQuery())
+        print(insertQuery.last())
+        if insertQuery.exec():
+            print('INSERT COMPLETE')
+        else:
+            print('INSERT FALSE = ' + insertQuery.lastError().text())
+
+    def getDestination_id(self):
+        temp = self.comboBox.currentText()
+        desModel = QSqlQueryModel()
+        selectQuery = QSqlQuery()
+        selectQuery.prepare('SELECT des_id,des_name From destination')
+        if selectQuery.exec():
+            desModel.setQuery(selectQuery)
+            for i in range(desModel.rowCount()):
+                #print(desModel.index(id, 1).data())
+                if temp == desModel.index(i, 1).data():
+                    return desModel.index(i, 0).data()
+                else:
+                    pass
+        else:
+            print('SELECT FALSE = ' + selectQuery.lastError().text())
+        
+
 def createConnection():
+    # ติดต่อ database ผ่าน driver SQLLITE
     con = QSqlDatabase.addDatabase("QSQLITE")
     con.setDatabaseName("ex1")
     if not con.open():
@@ -148,7 +204,9 @@ def createConnection():
 if __name__ == "__main__":
     import sys
 
-    if not createConnection():
+    # เรียกฟังชั่น เพื่อทดสอบติดต่อ database 
+    if not createConnection():      
+        # หากฟังชั่น return False ให้ system exit
         sys.exit(1)
 
     app = QtWidgets.QApplication(sys.argv)
