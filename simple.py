@@ -3,26 +3,31 @@ from PyQt5 import QtGui, QtWidgets, QtCore
 from PyQt5 import QtSql
 from PyQt5.QtCore import (
     QAbstractTableModel, 
-    QModelIndex, Qt)
+    QModelIndex,
+    QPersistentModelIndex,
+    Qt,
+    QAbstractItemModel
+    )
 from PyQt5.QtSql import (
     QSqlDatabase,
     QSqlQuery,
-    QSqlQueryModel,
+    QSqlQueryModel, QSqlRecord,
     QSqlRelation,
     QSqlRelationalDelegate,
     QSqlRelationalTableModel,
-    QSqlTableModel
+    QSqlTableModel,
     )
 from PyQt5.QtWidgets import (
     QAbstractItemView,
     QApplication,
     QComboBox,
-    QHeaderView, QListView,
+    QHeaderView, 
+    QListView,
     QMainWindow,
-    QMessageBox,
+    QMessageBox, QPushButton,
     QTableView,
     QWidget,
-    QAbstractItemView
+    QAbstractItemView,
     )
 
 class Ui_MainWindow(object):
@@ -91,7 +96,9 @@ class Ui_MainWindow(object):
 
         # เรียกฟังชั่นเพื่อโหลด model ลง table
         self.loadData()
+
         self.btn_add.clicked.connect(self.insertData)
+        self.btn_delete.clicked.connect(self.deleteData)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -112,6 +119,8 @@ class Ui_MainWindow(object):
         self.actionDrop_tablel.setText(_translate("MainWindow", "Drop tablel"))
 
     def loadData(self):
+        self.lineEdit.clear()
+        self.lineEdit.setFocus()
         # สร้าง model เรียก data จาก database
         # ใช้ QSqlRelationalTableModel สำหรับตารางที่มีคีย์นอก
         self.model = QSqlRelationalTableModel()
@@ -123,10 +132,13 @@ class Ui_MainWindow(object):
         self.model.setHeaderData(3, Qt.Horizontal, "Call Time")
         self.model.setHeaderData(4, Qt.Horizontal, "Status")
         self.model.setHeaderData(5, Qt.Horizontal, "Destination")
+        self.model.setHeaderData(6, Qt.Horizontal, "Option")
 
         # ให้ column#5 เป็นคีย์นอกดึงตารางนอกมาแสดง
         self.model.setRelation(5, QSqlRelation(
-            "destination", "des_id", "des_name"))
+            "destination", "des_id", "des_name"))  
+
+        # เรียกใช้ model เรียกใช้ได้จากทุกที่ใน class ไม่ต้องเรียก loadData()
         self.model.select()
 
         # ให้ tableView เลือก data จาก model ไปแสดง
@@ -134,11 +146,18 @@ class Ui_MainWindow(object):
         self.tableView.setItemDelegate(QSqlRelationalDelegate(self.tableView))
         self.tableView.setColumnHidden(0, True)
         self.tableView.setCornerButtonEnabled(False)
+        self.tableView.setSortingEnabled(True)
+        self.tableView.resizeColumnsToContents()
+        #self.tableView.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.tableView.columnCountChanged(6,7)
 
-        testText = 'des_name'
+        # เมื่อ click ให้เลือกทั้งแถว
+        self.tableView.setSelectionBehavior(QAbstractItemView.SelectRows)    
+
+        # สร้าง model เรียกตาราง destination แล้วยัดเข้า combobox
         self.desModel = QSqlQueryModel()
         selectQuery = QSqlQuery()
-        selectQuery.prepare(f'SELECT {testText} FROM destination')
+        selectQuery.prepare('SELECT des_name FROM destination')
         print('QUERY = ' + str(selectQuery.lastQuery()))
         if selectQuery.exec():
             self.desModel.setQuery(selectQuery)      
@@ -146,32 +165,43 @@ class Ui_MainWindow(object):
             self.comboBox.setModel(self.desModel)
         else:
             print('SELECT FALSE = ' + selectQuery.lastError().text())
-        
+
+        # พยายามยัด button เข้า tableView ได้แล้ว แต่ต้องหาวิธีเพิ่ม column combobox ใน tableView
+        # for i in range(self.model.rowCount()):
+        #     self.btn_test = QPushButton('Del')
+        #     index = self.tableView.model().index(i, 5)
+        #     self.tableView.setIndexWidget(index, self.btn_test)
+
     def insertData(self):
         q_number = self.lineEdit.text()
         q_localtime = time.localtime()
         q_enter_time = time.strftime("%H:%M:%S",q_localtime)
-        #q_number = 'text'
-        #q_enter_time = 'texttext'
+
+        # เรียก getDestination_id เพื่อหาค่า des_id เพื่อใช้ในคำสั่ง sql INSERT
         des_id = self.getDestination_id()
 
         insertQuery = QSqlQuery()
         insertQuery.prepare("INSERT INTO queue " + "(q_number,q_enter_time,des_id) " +
-                            "VALUES " + f"({q_number},{q_enter_time},{des_id})")
-        # ใช้ f-string แล้วไม่ได้จะลองเปลี่ยนเป็นแบบเดิม
-        # insertQuery.prepare("INSERT INTO (q_number,q_enter_time,des_id) VALUE (?,?,?)")
-        # insertQuery.addBindValue(q_number)
-        # insertQuery.addBindValue(q_enter_time)
-        # insertQuery.addBindValue(des_id)
+                            "VALUES " + f"('{q_number}','{q_enter_time}',{des_id})")
 
         print('Query = ' + insertQuery.lastQuery())
-        print(insertQuery.last())
         if insertQuery.exec():
             print('INSERT COMPLETE')
+            self.loadData()
         else:
             print('INSERT FALSE = ' + insertQuery.lastError().text())
 
+        # last_row = self.model.rowCount()
+        # self.model.insertRow(last_row)
+    
+    def deleteData(self):
+        current_item = self.tableView.selectedIndexes()
+        for index in current_item:
+            self.model.removeRow(index.row())
+        self.model.select()
+        
     def getDestination_id(self):
+        # สร้างมาเพื่อให้ return ค่า des_id ในตาราง destination กลับไป
         temp = self.comboBox.currentText()
         desModel = QSqlQueryModel()
         selectQuery = QSqlQuery()
@@ -179,7 +209,6 @@ class Ui_MainWindow(object):
         if selectQuery.exec():
             desModel.setQuery(selectQuery)
             for i in range(desModel.rowCount()):
-                #print(desModel.index(id, 1).data())
                 if temp == desModel.index(i, 1).data():
                     return desModel.index(i, 0).data()
                 else:
@@ -187,11 +216,16 @@ class Ui_MainWindow(object):
         else:
             print('SELECT FALSE = ' + selectQuery.lastError().text())
         
+    def btn_delClicked(self):
+        button =QtGui.QGuiApplication.focusObject()
+        index = self.tableView.indexAt(button.pos())
+        if index.isValid():
+            print(index.row(),index.column())
 
 def createConnection():
     # ติดต่อ database ผ่าน driver SQLLITE
     con = QSqlDatabase.addDatabase("QSQLITE")
-    con.setDatabaseName("ex1")
+    con.setDatabaseName("simple.sqlite")
     if not con.open():
         QMessageBox.critical(
             None,
