@@ -1,12 +1,14 @@
+from sqlite3.dbapi2 import Error
 import time
+import random
 from PyQt5 import QtGui, QtWidgets, QtCore
 from PyQt5 import QtSql
 from PyQt5.QtCore import (
     QAbstractTableModel, 
     QModelIndex,
-    QPersistentModelIndex,
+    QPersistentModelIndex, QPoint,
     Qt,
-    QAbstractItemModel
+    QAbstractItemModel, qDebug
     )
 from PyQt5.QtSql import (
     QSqlDatabase,
@@ -99,6 +101,7 @@ class Ui_MainWindow(object):
 
         self.btn_add.clicked.connect(self.insertData)
         self.btn_delete.clicked.connect(self.deleteData)
+        self.btn_call.clicked.connect(self.insertDev)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -172,34 +175,35 @@ class Ui_MainWindow(object):
         #     index = self.tableView.model().index(i, 5)
         #     self.tableView.setIndexWidget(index, self.btn_test)
 
+        # เก็บค่า text จาก column
+
     def insertData(self):
         q_number = self.lineEdit.text()
         q_localtime = time.localtime()
         q_enter_time = time.strftime("%H:%M:%S",q_localtime)
 
-        # เรียก getDestination_id เพื่อหาค่า des_id เพื่อใช้ในคำสั่ง sql INSERT
-        des_id = self.getDestination_id()
+        # q_number ต้องไม่ใช่ค่าเว้นวรรค และ ไต้องม่ใช่ค่าว่าง
+        if not q_number.isspace() and q_number != '':
 
-        insertQuery = QSqlQuery()
-        insertQuery.prepare("INSERT INTO queue " + "(q_number,q_enter_time,des_id) " +
-                            "VALUES " + f"('{q_number}','{q_enter_time}',{des_id})")
+            # เรียก getDestination_id เพื่อหาค่า des_id เพื่อใช้ในคำสั่ง sql INSERT
+            des_id = self.getDestination_id()
+            try:
+                insertQuery = QSqlQuery()
+                insertQuery.prepare("INSERT INTO queue " + "(q_number,q_enter_time,des_id) " +
+                                    "VALUES " + f"('{q_number}','{q_enter_time}',{des_id})")
 
-        print('Query = ' + insertQuery.lastQuery())
-        if insertQuery.exec():
-            print('INSERT COMPLETE')
-            self.loadData()
+                print('Query = ' + insertQuery.lastQuery())
+                if insertQuery.exec():
+                    print('INSERT COMPLETE')
+                    self.loadData()
+                else:
+                    print('INSERT FALSE = ' + insertQuery.lastError().text())
+            except(Error) as e:
+                print(str(time.strftime("%H:%M:%S : ", time.localtime())) +
+                      'ERROR :' + str(e))
         else:
-            print('INSERT FALSE = ' + insertQuery.lastError().text())
+            self.showDialog('กรุณากรอกหมายเลขที่จะเพิ่มก่อน')
 
-        # last_row = self.model.rowCount()
-        # self.model.insertRow(last_row)
-    
-    def deleteData(self):
-        current_item = self.tableView.selectedIndexes()
-        for index in current_item:
-            self.model.removeRow(index.row())
-        self.model.select()
-        
     def getDestination_id(self):
         # สร้างมาเพื่อให้ return ค่า des_id ในตาราง destination กลับไป
         temp = self.comboBox.currentText()
@@ -215,12 +219,71 @@ class Ui_MainWindow(object):
                     pass
         else:
             print('SELECT FALSE = ' + selectQuery.lastError().text())
+    
+    def insertDev(self):
+        j = 10
+        for i in range(50):
+            q_number = random.randint(0,100000)
+            q_enter_time = f'18:{j}:00'
+            des_id = 4
+            #print(q_number)
+            insertQuery = QSqlQuery()
+            insertQuery.prepare("INSERT INTO queue " + "(q_number,q_enter_time,des_id) " +
+                                "VALUES " + f"('{q_number}','{q_enter_time}',{des_id})")
+            insertQuery.exec()
+            self.model.select()
+            j += 1
+        print('insertDEV complete')
+
+    def deleteData(self):
+        try:
+            # เก็บค่า text จาก column
+            current_row = self.tableView.selectedIndexes()
+            current_itemUse = current_row[0]
+            q_number = self.tableView.model().data(
+                self.tableView.model().index(current_itemUse.row(), 1))
+        except:
+            self.showDialog('กรุณาเลือกหมายเลขที่จะลบก่อน')
+
+        try:
+            # ยืนยนการลบด้วย code 1024
+            if self.confDelete(q_number) == 1024:
+                current_item = self.tableView.selectedIndexes()
+                for index in current_item:
+                    self.model.removeRow(index.row())
+                self.model.select()
+                print('Record deleted.')
+                self.showDialog('ลบหมายเลขแล้ว')
+            else:
+                print('User decided cancel delete this record.')
+        except(Error) as e:
+            print(str(time.strftime("%H:%M:%S : ", time.localtime())) +
+                  'ERROR :' + str(e))
+
+    def confDelete(self,q_number):
+        # สร้าง dialog เพื่อยืนยันการลบ และ return code ยืนยันการลบด้วย code 1024
+        confMsg = QtWidgets.QMessageBox()
+        confMsg.setIcon(QtWidgets.QMessageBox.Critical)
+        confMsg.setText('ยืนยันที่จะลบหมายเลข : ' + q_number)
+        confMsg.setWindowTitle('แจ้งเตือนการลบ')
+        confMsg.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
+        reval = confMsg.exec_()
+        return(reval)
         
     def btn_delClicked(self):
         button =QtGui.QGuiApplication.focusObject()
         index = self.tableView.indexAt(button.pos())
         if index.isValid():
             print(index.row(),index.column())
+
+    def showDialog(self,message):
+        msg = QtWidgets.QMessageBox()
+        msg.setWindowTitle('แจ้งเตือน')
+        msg.setIcon(QtWidgets.QMessageBox.Information)
+        msg.setText(
+            #message + str(time.strftime(" @ %H:%M:%S ", time.localtime())))
+            message)
+        msg.exec_()
 
 def createConnection():
     # ติดต่อ database ผ่าน driver SQLLITE
