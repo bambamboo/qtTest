@@ -4,11 +4,12 @@ import random
 from PyQt5 import QtGui, QtWidgets, QtCore
 from PyQt5 import QtSql
 from PyQt5.QtCore import (
-    QAbstractTableModel, 
+    QAbstractProxyModel, QAbstractTableModel, 
     QModelIndex,
-    QPersistentModelIndex, QPoint,
+    QPersistentModelIndex, QPoint, QSortFilterProxyModel,
     Qt,
-    QAbstractItemModel, qDebug
+    QAbstractItemModel,
+    qDebug,
     )
 from PyQt5.QtSql import (
     QSqlDatabase,
@@ -102,6 +103,7 @@ class Ui_MainWindow(object):
         self.btn_add.clicked.connect(self.insertData)
         self.btn_delete.clicked.connect(self.deleteData)
         self.btn_call.clicked.connect(self.insertDev)
+        self.btn_search.clicked.connect(self.searchData)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -124,6 +126,7 @@ class Ui_MainWindow(object):
     def loadData(self):
         self.lineEdit.clear()
         self.lineEdit.setFocus()
+
         # สร้าง model เรียก data จาก database
         # ใช้ QSqlRelationalTableModel สำหรับตารางที่มีคีย์นอก
         self.model = QSqlRelationalTableModel()
@@ -150,13 +153,18 @@ class Ui_MainWindow(object):
         self.tableView.setColumnHidden(0, True)
         self.tableView.setCornerButtonEnabled(False)
         self.tableView.setSortingEnabled(True)
-        self.tableView.resizeColumnsToContents()
-        #self.tableView.setSelectionMode(QAbstractItemView.SingleSelection)
-        self.tableView.columnCountChanged(6,7)
+        
+        # fetch ข้อมูลจากตารางออกมาให้หมด มีผลตอนใช้ search
+        while self.model.canFetchMore() == True:
+            self.tableView.scrollToBottom()
+            self.model.fetchMore()
+            self.tableView.scrollToBottom()
+            self.tableView.resizeColumnsToContents()
 
+        
         # เมื่อ click ให้เลือกทั้งแถว
         self.tableView.setSelectionBehavior(QAbstractItemView.SelectRows)    
-
+        
         # สร้าง model เรียกตาราง destination แล้วยัดเข้า combobox
         self.desModel = QSqlQueryModel()
         selectQuery = QSqlQuery()
@@ -175,14 +183,12 @@ class Ui_MainWindow(object):
         #     index = self.tableView.model().index(i, 5)
         #     self.tableView.setIndexWidget(index, self.btn_test)
 
-        # เก็บค่า text จาก column
-
     def insertData(self):
         q_number = self.lineEdit.text()
         q_localtime = time.localtime()
         q_enter_time = time.strftime("%H:%M:%S",q_localtime)
 
-        # q_number ต้องไม่ใช่ค่าเว้นวรรค และ ไต้องม่ใช่ค่าว่าง
+        # q_number ต้องไม่ใช่ค่าเว้นวรรค และ ต้องไม่ใช่ค่าว่าง
         if not q_number.isspace() and q_number != '':
 
             # เรียก getDestination_id เพื่อหาค่า des_id เพื่อใช้ในคำสั่ง sql INSERT
@@ -235,6 +241,43 @@ class Ui_MainWindow(object):
             j += 1
         print('insertDEV complete')
 
+    def searchData(self):
+        q_number = self.lineEdit.text()
+        totleRow = self.tableView.model().rowCount()
+        foundStatus = False
+
+        # q_number ต้องไม่ใช่ค่าเว้นวรรค และ ต้องไม่ใช่ค่าว่าง
+        if not q_number.isspace() and q_number != '':
+
+            for i in range(totleRow):
+                s_number = self.tableView.model().data(self.tableView.model().index(i, 1))
+                if q_number == s_number:
+                    print('found this number.')
+                    foundStatus = True
+                    break
+                else:
+                    pass
+
+            if foundStatus == True:
+                self.tableView.selectRow(i)
+            else:
+                self.showDialog('ค้นหมายเลข ' + q_number + ' ไม่พบ')
+
+        else:
+            self.showDialog('กรุณากรอกหมายเลขที่จะค้นก่อน')
+
+    def searchData2(self):
+        q_number = self.lineEdit.text()
+        totleRow = self.tableView.model().rowCount()
+        foundStatus = False
+
+        # q_number ต้องไม่ใช่ค่าเว้นวรรค และ ต้องไม่ใช่ค่าว่าง
+        if not q_number.isspace() and q_number != '':
+            print('ไม่เป็นค่าว่าง')
+        else:
+            self.showDialog('กรุณากรอกหมายเลขที่จะค้นก่อน')
+
+
     def deleteData(self):
         try:
             # เก็บค่า text จาก column
@@ -246,7 +289,7 @@ class Ui_MainWindow(object):
             self.showDialog('กรุณาเลือกหมายเลขที่จะลบก่อน')
 
         try:
-            # ยืนยนการลบด้วย code 1024
+            # ยืนยันการลบด้วย code 1024
             if self.confDelete(q_number) == 1024:
                 current_item = self.tableView.selectedIndexes()
                 for index in current_item:
