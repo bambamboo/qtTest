@@ -1,6 +1,7 @@
 from sqlite3.dbapi2 import Error
 import time
 import random
+import pyttsx3
 from PyQt5 import QtGui, QtWidgets, QtCore
 from PyQt5 import QtSql
 from PyQt5.QtCore import (
@@ -23,7 +24,7 @@ from PyQt5.QtSql import (
 from PyQt5.QtWidgets import (
     QAbstractItemView,
     QApplication,
-    QComboBox,
+    QComboBox, QDialog,
     QHeaderView, 
     QListView,
     QMainWindow,
@@ -32,40 +33,59 @@ from PyQt5.QtWidgets import (
     QWidget,
     QAbstractItemView,
     )
+import destination2
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(700, 500)
-        MainWindow.setMinimumSize(QtCore.QSize(700, 500))
-        MainWindow.setMaximumSize(QtCore.QSize(700, 500))
+        MainWindow.resize(700, 600)
+        MainWindow.setMinimumSize(QtCore.QSize(700, 600))
+        MainWindow.setMaximumSize(QtCore.QSize(700, 600))
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.btn_call = QtWidgets.QPushButton(self.centralwidget)
-        self.btn_call.setGeometry(QtCore.QRect(558, 380, 131, 71))
+        self.btn_call.setGeometry(QtCore.QRect(558, 480, 131, 71))
         self.btn_call.setObjectName("btn_call")
+        font = QtGui.QFont()
+        font.setPointSize(11)
+        self.btn_call.setFont(font)
         self.btn_add = QtWidgets.QPushButton(self.centralwidget)
-        self.btn_add.setGeometry(QtCore.QRect(10, 380, 89, 71))
+        self.btn_add.setGeometry(QtCore.QRect(10, 480, 89, 71))
         self.btn_add.setStyleSheet("")
         self.btn_add.setObjectName("btn_add")
-        self.btn_delete = QtWidgets.QPushButton(self.centralwidget)
-        self.btn_delete.setGeometry(QtCore.QRect(120, 380, 89, 71))
-        self.btn_delete.setObjectName("btn_delete")
-        self.btn_search = QtWidgets.QPushButton(self.centralwidget)
-        self.btn_search.setGeometry(QtCore.QRect(230, 380, 89, 71))
-        self.btn_search.setObjectName("btn_search")
-        self.lineEdit = QtWidgets.QLineEdit(self.centralwidget)
-        self.lineEdit.setGeometry(QtCore.QRect(10, 334, 311, 31))
         font = QtGui.QFont()
-        font.setPointSize(12)
+        font.setPointSize(11)
+        self.btn_add.setFont(font)
+        self.btn_delete = QtWidgets.QPushButton(self.centralwidget)
+        self.btn_delete.setGeometry(QtCore.QRect(120, 480, 89, 71))
+        self.btn_delete.setObjectName("btn_delete")
+        font = QtGui.QFont()
+        font.setPointSize(11)
+        self.btn_delete.setFont(font)
+        self.btn_search = QtWidgets.QPushButton(self.centralwidget)
+        self.btn_search.setGeometry(QtCore.QRect(230, 480, 89, 71))
+        self.btn_search.setObjectName("btn_search")
+        font = QtGui.QFont()
+        font.setPointSize(11)
+        self.btn_search.setFont(font)
+        self.lineEdit = QtWidgets.QLineEdit(self.centralwidget)
+        self.lineEdit.setGeometry(QtCore.QRect(10, 434, 311, 31))
+        font = QtGui.QFont()
+        font.setPointSize(14)
         self.lineEdit.setFont(font)
         self.lineEdit.setObjectName("lineEdit")
         self.comboBox = QtWidgets.QComboBox(self.centralwidget)
-        self.comboBox.setGeometry(QtCore.QRect(335, 334, 121, 31))
+        self.comboBox.setGeometry(QtCore.QRect(335, 434, 121, 31))
         self.comboBox.setObjectName("comboBox")
+        font = QtGui.QFont()
+        font.setPointSize(11)
+        self.comboBox.setFont(font)
         self.tableView = QtWidgets.QTableView(self.centralwidget)
-        self.tableView.setGeometry(QtCore.QRect(10, 10, 681, 311))
+        self.tableView.setGeometry(QtCore.QRect(10, 10, 681, 411))
         self.tableView.setObjectName("tableView")
+        font = QtGui.QFont()
+        font.setPointSize(11)
+        self.tableView.setFont(font)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 700, 22))
@@ -78,8 +98,8 @@ class Ui_MainWindow(object):
         MainWindow.setStatusBar(self.statusbar)
         self.action_Invite_window = QtWidgets.QAction(MainWindow)
         self.action_Invite_window.setObjectName("action_Invite_window")
-        self.actionPlace_windows = QtWidgets.QAction(MainWindow)
-        self.actionPlace_windows.setObjectName("actionPlace_windows")
+        #self.actionPlace_windows = QtWidgets.QAction(MainWindow)
+        #self.actionPlace_windows.setObjectName("actionPlace_windows")
         self.actionini_py = QtWidgets.QAction(MainWindow)
         self.actionini_py.setObjectName("actionini_py")
         self.actionDestination = QtWidgets.QAction(MainWindow)
@@ -87,7 +107,7 @@ class Ui_MainWindow(object):
         self.actionDrop_tablel = QtWidgets.QAction(MainWindow)
         self.actionDrop_tablel.setObjectName("actionDrop_tablel")
         self.menuSetting.addAction(self.action_Invite_window)
-        self.menuSetting.addAction(self.actionPlace_windows)
+        #self.menuSetting.addAction(self.actionPlace_windows)
         self.menuSetting.addAction(self.actionDestination)
         self.menuSetting.addAction(self.actionDrop_tablel)
         self.menuSetting.addSeparator()
@@ -102,8 +122,13 @@ class Ui_MainWindow(object):
 
         self.btn_add.clicked.connect(self.insertData)
         self.btn_delete.clicked.connect(self.deleteData)
-        self.btn_call.clicked.connect(self.insertDev)
+        self.btn_call.clicked.connect(self.speak)
         self.btn_search.clicked.connect(self.searchData)
+        self.actionDestination.triggered.connect(self.show_desDialog)
+        
+
+    def show_desDialog(self):
+        self.desDialog.show()
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -117,8 +142,8 @@ class Ui_MainWindow(object):
         self.btn_search.setWhatsThis(_translate("MainWindow", "<html><head/><body><p>คลิ๊กเพื่อโหลดตารางคิวใหม่</p></body></html>"))
         self.btn_search.setText(_translate("MainWindow", "SEARCH"))
         self.menuSetting.setTitle(_translate("MainWindow", "Setting"))
-        self.action_Invite_window.setText(_translate("MainWindow", "Invite sentence"))
-        self.actionPlace_windows.setText(_translate("MainWindow", "Place sentence"))
+        self.action_Invite_window.setText(_translate("MainWindow", "Call sentence setting"))
+        #self.actionPlace_windows.setText(_translate("MainWindow", "Place sentence"))
         self.actionini_py.setText(_translate("MainWindow", "ini.py"))
         self.actionDestination.setText(_translate("MainWindow", "Destination setting"))
         self.actionDrop_tablel.setText(_translate("MainWindow", "Drop tablel"))
@@ -153,18 +178,14 @@ class Ui_MainWindow(object):
         self.tableView.setColumnHidden(0, True)
         self.tableView.setCornerButtonEnabled(False)
         self.tableView.setSortingEnabled(True)
-        
-        # fetch ข้อมูลจากตารางออกมาให้หมด มีผลตอนใช้ search
-        while self.model.canFetchMore() == True:
-            self.tableView.scrollToBottom()
-            self.model.fetchMore()
-            self.tableView.scrollToBottom()
-            self.tableView.resizeColumnsToContents()
+        self.tableView.setColumnWidth(1,210)
 
-        
+        # เรียก fetchData เพื่อ fetch data เข้ามาใน model ให้หมด
+        self.fetchData()
+       
         # เมื่อ click ให้เลือกทั้งแถว
         self.tableView.setSelectionBehavior(QAbstractItemView.SelectRows)    
-        
+
         # สร้าง model เรียกตาราง destination แล้วยัดเข้า combobox
         self.desModel = QSqlQueryModel()
         selectQuery = QSqlQuery()
@@ -177,11 +198,10 @@ class Ui_MainWindow(object):
         else:
             print('SELECT FALSE = ' + selectQuery.lastError().text())
 
-        # พยายามยัด button เข้า tableView ได้แล้ว แต่ต้องหาวิธีเพิ่ม column combobox ใน tableView
-        # for i in range(self.model.rowCount()):
-        #     self.btn_test = QPushButton('Del')
-        #     index = self.tableView.model().index(i, 5)
-        #     self.tableView.setIndexWidget(index, self.btn_test)
+        # สร้าง obj ของ destination setting ไว้รอเรียก
+        self.desDialog = QtWidgets.QDialog()
+        self.ui = destination2.Ui_Dialog()
+        self.ui.setupUi(self.desDialog)
 
     def insertData(self):
         q_number = self.lineEdit.text()
@@ -199,11 +219,13 @@ class Ui_MainWindow(object):
                                     "VALUES " + f"('{q_number}','{q_enter_time}',{des_id})")
 
                 print('Query = ' + insertQuery.lastQuery())
+
                 if insertQuery.exec():
                     print('INSERT COMPLETE')
                     self.loadData()
                 else:
                     print('INSERT FALSE = ' + insertQuery.lastError().text())
+                    
             except(Error) as e:
                 print(str(time.strftime("%H:%M:%S : ", time.localtime())) +
                       'ERROR :' + str(e))
@@ -242,21 +264,26 @@ class Ui_MainWindow(object):
         print('insertDEV complete')
 
     def searchData(self):
+        self.fetchData()
         q_number = self.lineEdit.text()
         totleRow = self.tableView.model().rowCount()
         foundStatus = False
 
         # q_number ต้องไม่ใช่ค่าเว้นวรรค และ ต้องไม่ใช่ค่าว่าง
         if not q_number.isspace() and q_number != '':
-
+            i = 0
             for i in range(totleRow):
+
+                # เก็บค่า q_number จาก tableView
                 s_number = self.tableView.model().data(self.tableView.model().index(i, 1))
+                
+                # เทียบค่า q_number ของ lineEdit กับ tableView
                 if q_number == s_number:
                     print('found this number.')
                     foundStatus = True
                     break
                 else:
-                    pass
+                    foundStatus = False
 
             if foundStatus == True:
                 self.tableView.selectRow(i)
@@ -265,18 +292,6 @@ class Ui_MainWindow(object):
 
         else:
             self.showDialog('กรุณากรอกหมายเลขที่จะค้นก่อน')
-
-    def searchData2(self):
-        q_number = self.lineEdit.text()
-        totleRow = self.tableView.model().rowCount()
-        foundStatus = False
-
-        # q_number ต้องไม่ใช่ค่าเว้นวรรค และ ต้องไม่ใช่ค่าว่าง
-        if not q_number.isspace() and q_number != '':
-            print('ไม่เป็นค่าว่าง')
-        else:
-            self.showDialog('กรุณากรอกหมายเลขที่จะค้นก่อน')
-
 
     def deleteData(self):
         try:
@@ -287,22 +302,25 @@ class Ui_MainWindow(object):
                 self.tableView.model().index(current_itemUse.row(), 1))
         except:
             self.showDialog('กรุณาเลือกหมายเลขที่จะลบก่อน')
+            return 
 
-        try:
-            # ยืนยันการลบด้วย code 1024
-            if self.confDelete(q_number) == 1024:
-                current_item = self.tableView.selectedIndexes()
-                for index in current_item:
-                    self.model.removeRow(index.row())
-                self.model.select()
-                print('Record deleted.')
-                self.showDialog('ลบหมายเลขแล้ว')
-            else:
-                print('User decided cancel delete this record.')
-        except(Error) as e:
-            print(str(time.strftime("%H:%M:%S : ", time.localtime())) +
-                  'ERROR :' + str(e))
-
+        if q_number == None:
+            self.showDialog('เกิดข้อผิดพลาดระหว่างการลบ')
+            self.model.select()
+            return
+        
+        # ยืนยันการลบด้วย code 1024
+        temp = self.confDelete(q_number)
+        if temp == 1024:
+            current_item = self.tableView.selectedIndexes()
+            for index in current_item:
+                self.model.removeRow(index.row())
+            self.model.select()
+            print('Record deleted.')
+            self.showDialog('ลบหมายเลขแล้ว')
+        else:
+            print('User decided cancel delete this record.')
+        
     def confDelete(self,q_number):
         # สร้าง dialog เพื่อยืนยันการลบ และ return code ยืนยันการลบด้วย code 1024
         confMsg = QtWidgets.QMessageBox()
@@ -327,6 +345,60 @@ class Ui_MainWindow(object):
             #message + str(time.strftime(" @ %H:%M:%S ", time.localtime())))
             message)
         msg.exec_()
+
+    def speak(self):
+        try:
+            # เก็บค่า text จาก column
+            current_row = self.tableView.selectedIndexes()
+            current_inUse = current_row[0]
+            q_numberText = self.tableView.model().data(
+                self.tableView.model().index(current_inUse.row(), 1))
+            des_idText = self.tableView.model().data(
+                self.tableView.model().index(current_inUse.row(), 5))
+        except:
+            self.showDialog('กรุณาเลือกหมายเลขที่จะเรียกก่อน')
+            return
+
+        # ยืนยันการเรียกด้วย code 1024
+        temp = self.confSpeak(q_numberText)
+        if temp == 1024:
+            engine = pyttsx3.init()
+            """ RATE"""
+            rate = engine.getProperty('rate')
+            #print (rate)
+            engine.setProperty('rate', 110)
+            """VOLUME"""
+            volume = engine.getProperty('volume')
+            #print (volume)
+            engine.setProperty('volume',1.0)
+            """VOICE"""
+            voices = 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\TTS_THAI'
+            engine.setProperty('voice',voices)
+            engine.say('ขอเชิญหมายเลข' + q_numberText + 'ที่ช่อง' + des_idText)
+            print('result = :'+ q_numberText)
+            engine.runAndWait()
+            engine.stop()
+        else:
+            print('User decided cancel call.')
+
+    def confSpeak(self,q_numberText):
+        # สร้าง dialog เพื่อยืนยันการเรียกและ return code ยืนยันการเรียกด้วย code 1024
+        confMsg = QtWidgets.QMessageBox()
+        confMsg.setIcon(QtWidgets.QMessageBox.Warning)
+        confMsg.setText('ยืนยันที่จะเรียกหมายเลข : ' + q_numberText)
+        confMsg.setWindowTitle('แจ้งเตือน')
+        confMsg.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
+        reval = confMsg.exec_()
+        return(reval)
+
+    def fetchData(self):
+        self.model.select()
+        # fetch ข้อมูลจากตารางออกมาให้หมด มีผลตอนใช้ search
+        while self.model.canFetchMore() == True:
+            #self.tableView.scrollToBottom()
+            self.model.fetchMore()
+        print('rowCoundt = ' + str(self.model.rowCount()))
+        self.tableView.scrollToBottom()
 
 def createConnection():
     # ติดต่อ database ผ่าน driver SQLLITE

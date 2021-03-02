@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'destination.ui'
+# Form implementation generated from reading ui file '.\destination2.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.2
 #
@@ -9,69 +9,53 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QApplication, QMessageBox, QLabel
-from PyQt5.QtSql import QSqlDatabase, QSqlQuery
 
 
-class Ui_DestinationWindow(object):
+class Ui_Dialog(object):
+    def setupUi(self, Dialog):
+        Dialog.setObjectName("Dialog")
+        Dialog.resize(400, 300)
+        self.listView = QtWidgets.QListView(Dialog)
+        self.listView.setGeometry(QtCore.QRect(10, 10, 250, 281))
+        self.listView.setObjectName("listView")
+        self.pushButton = QtWidgets.QPushButton(Dialog)
+        self.pushButton.setGeometry(QtCore.QRect(270, 50, 121, 30))
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        font.setBold(False)
+        font.setWeight(50)
+        self.pushButton.setFont(font)
+        self.pushButton.setObjectName("pushButton")
+        self.pushButton_2 = QtWidgets.QPushButton(Dialog)
+        self.pushButton_2.setGeometry(QtCore.QRect(270, 90, 121, 30))
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        font.setBold(False)
+        font.setWeight(50)
+        self.pushButton_2.setFont(font)
+        self.pushButton_2.setObjectName("pushButton_2")
+        self.lineEdit = QtWidgets.QLineEdit(Dialog)
+        self.lineEdit.setGeometry(QtCore.QRect(270, 10, 120, 30))
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        self.lineEdit.setFont(font)
+        self.lineEdit.setObjectName("lineEdit")
 
-    def loadData(self):
-        conn = QSqlDatabase.addDatabase('QSQLITE')
-        conn.setDatabaseName('ex1')
-        temp = 'destination'
-        if not conn.open():
-            QtWidgets.QMessageBox.critical(
-                None,
-                "แจ้งเตือน",
-                "ERROR ติดต่อฐานข้อมูลไม่ได้ : %s" % conn.lastError().databaseText(),
-            )
-            sys.exit(1)
-        #query = 'SELECT * FROM destination'
-        query = QSqlQuery()
-        query.exec(
-            f"""
-            SELECT * FROM {temp}
-            """
-        )
+        self.retranslateUi(Dialog)
+        QtCore.QMetaObject.connectSlotsByName(Dialog)
 
-    def setupUi(self, DestinationWindow):
-        DestinationWindow.setObjectName("DestinationWindow")
-        DestinationWindow.resize(300, 300)
-        self.centralwidget = QtWidgets.QWidget(DestinationWindow)
-        self.centralwidget.setObjectName("centralwidget")
-        self.btn_save = QtWidgets.QPushButton(self.centralwidget)
-        self.btn_save.setGeometry(QtCore.QRect(100, 230, 89, 41))
-        self.btn_save.setObjectName("btn_save")
-        self.tableWidget = QtWidgets.QTableWidget(self.centralwidget)
-        self.tableWidget.setGeometry(QtCore.QRect(20, 20, 260, 200))
-        self.tableWidget.setObjectName("tableWidget")
-        self.tableWidget.setColumnCount(0)
-        self.tableWidget.setRowCount(0)
-        DestinationWindow.setCentralWidget(self.centralwidget)
-        self.menubar = QtWidgets.QMenuBar(DestinationWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 300, 22))
-        self.menubar.setObjectName("menubar")
-        DestinationWindow.setMenuBar(self.menubar)
-        self.statusbar = QtWidgets.QStatusBar(DestinationWindow)
-        self.statusbar.setObjectName("statusbar")
-        DestinationWindow.setStatusBar(self.statusbar)
-
-        self.retranslateUi(DestinationWindow)
-        QtCore.QMetaObject.connectSlotsByName(DestinationWindow)
-
-        self.loadData()
-
-    def retranslateUi(self, DestinationWindow):
+    def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
-        DestinationWindow.setWindowTitle(_translate("DestinationWindow", "Destination Setting"))
-        self.btn_save.setText(_translate("DestinationWindow", "SAVE"))
+        Dialog.setWindowTitle(_translate("Dialog", "Destination setting"))
+        self.pushButton.setText(_translate("Dialog", "Add"))
+        self.pushButton_2.setText(_translate("Dialog", "Delete"))
 
 
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
-    DestinationWindow = QtWidgets.QMainWindow()
-    ui = Ui_DestinationWindow()
-    ui.setupUi(DestinationWindow)
-    DestinationWindow.show()
+    Dialog = QtWidgets.QDialog()
+    ui = Ui_Dialog()
+    ui.setupUi(Dialog)
+    Dialog.show()
     sys.exit(app.exec_())
