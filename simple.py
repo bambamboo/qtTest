@@ -1,17 +1,13 @@
 from sqlite3.dbapi2 import Error
+from time import sleep
 import time
 import random
 import pyttsx3
-from PyQt5 import QtGui, QtWidgets, QtCore
-from PyQt5 import QtSql
-from PyQt5.QtCore import (
-    QAbstractProxyModel, QAbstractTableModel, 
-    QModelIndex,
-    QPersistentModelIndex, QPoint, QSortFilterProxyModel,
-    Qt,
-    QAbstractItemModel,
-    qDebug,
-    )
+from gtts import gTTS
+import os
+import pyglet
+from PyQt5 import QtGui, QtWidgets, QtCore, QtSql
+from PyQt5.QtCore import Qt
 from PyQt5.QtSql import (
     QSqlDatabase,
     QSqlQuery,
@@ -20,20 +16,22 @@ from PyQt5.QtSql import (
     QSqlRelationalDelegate,
     QSqlRelationalTableModel,
     QSqlTableModel,
-    )
+)
 from PyQt5.QtWidgets import (
     QAbstractItemView,
     QApplication,
     QComboBox, QDialog,
-    QHeaderView, 
+    QHeaderView,
     QListView,
     QMainWindow,
     QMessageBox, QPushButton,
     QTableView,
     QWidget,
     QAbstractItemView,
-    )
+)
+
 import destination2
+
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -98,8 +96,8 @@ class Ui_MainWindow(object):
         MainWindow.setStatusBar(self.statusbar)
         self.action_Invite_window = QtWidgets.QAction(MainWindow)
         self.action_Invite_window.setObjectName("action_Invite_window")
-        #self.actionPlace_windows = QtWidgets.QAction(MainWindow)
-        #self.actionPlace_windows.setObjectName("actionPlace_windows")
+        # self.actionPlace_windows = QtWidgets.QAction(MainWindow)
+        # self.actionPlace_windows.setObjectName("actionPlace_windows")
         self.actionini_py = QtWidgets.QAction(MainWindow)
         self.actionini_py.setObjectName("actionini_py")
         self.actionDestination = QtWidgets.QAction(MainWindow)
@@ -107,7 +105,7 @@ class Ui_MainWindow(object):
         self.actionDrop_tablel = QtWidgets.QAction(MainWindow)
         self.actionDrop_tablel.setObjectName("actionDrop_tablel")
         self.menuSetting.addAction(self.action_Invite_window)
-        #self.menuSetting.addAction(self.actionPlace_windows)
+        # self.menuSetting.addAction(self.actionPlace_windows)
         self.menuSetting.addAction(self.actionDestination)
         self.menuSetting.addAction(self.actionDrop_tablel)
         self.menuSetting.addSeparator()
@@ -125,7 +123,6 @@ class Ui_MainWindow(object):
         self.btn_call.clicked.connect(self.speak)
         self.btn_search.clicked.connect(self.searchData)
         self.actionDestination.triggered.connect(self.show_desDialog)
-        
 
     def show_desDialog(self):
         self.desDialog.show()
@@ -133,19 +130,25 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Simple Queue"))
-        self.btn_call.setWhatsThis(_translate("MainWindow", "<html><head/><body><p>คลิ๊กเพื่อเรียกคิวที่เลือกจากตารางคิว</p></body></html>"))
-        self.btn_call.setText(_translate("MainWindow", "CALL"))
-        self.btn_add.setWhatsThis(_translate("MainWindow", "<html><head/><body><p>คลิ๊กเพื่อเปิดเมนูการเพิ่มคิวด้วยตัวเอง</p></body></html>"))
-        self.btn_add.setText(_translate("MainWindow", "M-ADD"))
-        self.btn_delete.setWhatsThis(_translate("MainWindow", "<html><head/><body><p>คลิ๊กเพื่อลบคิวที่ป้อนค่าผิดออกจากตารางคิว</p></body></html>"))
-        self.btn_delete.setText(_translate("MainWindow", "DELETE"))
-        self.btn_search.setWhatsThis(_translate("MainWindow", "<html><head/><body><p>คลิ๊กเพื่อโหลดตารางคิวใหม่</p></body></html>"))
-        self.btn_search.setText(_translate("MainWindow", "SEARCH"))
-        self.menuSetting.setTitle(_translate("MainWindow", "Setting"))
-        self.action_Invite_window.setText(_translate("MainWindow", "Call sentence setting"))
+        self.btn_call.setWhatsThis(_translate(
+            "MainWindow", "<html><head/><body><p>คลิ๊กเพื่อเรียกคิวที่เลือกจากตารางคิว</p></body></html>"))
+        self.btn_call.setText(_translate("MainWindow", "เรียกคิว"))
+        self.btn_add.setWhatsThis(_translate(
+            "MainWindow", "<html><head/><body><p>คลิ๊กเพื่อเปิดเมนูการเพิ่มคิวด้วยตัวเอง</p></body></html>"))
+        self.btn_add.setText(_translate("MainWindow", "เพิ่มคิว"))
+        self.btn_delete.setWhatsThis(_translate(
+            "MainWindow", "<html><head/><body><p>คลิ๊กเพื่อลบคิวที่ป้อนค่าผิดออกจากตารางคิว</p></body></html>"))
+        self.btn_delete.setText(_translate("MainWindow", "ลบคิว"))
+        self.btn_search.setWhatsThis(_translate(
+            "MainWindow", "<html><head/><body><p>คลิ๊กเพื่อโหลดตารางคิวใหม่</p></body></html>"))
+        self.btn_search.setText(_translate("MainWindow", "ค้นหาคิว"))
+        self.menuSetting.setTitle(_translate("MainWindow", "ตั้งค่า"))
+        self.action_Invite_window.setText(
+            _translate("MainWindow", "Call sentence setting"))
         #self.actionPlace_windows.setText(_translate("MainWindow", "Place sentence"))
         self.actionini_py.setText(_translate("MainWindow", "ini.py"))
-        self.actionDestination.setText(_translate("MainWindow", "Destination setting"))
+        self.actionDestination.setText(
+            _translate("MainWindow", "Destination setting"))
         self.actionDrop_tablel.setText(_translate("MainWindow", "Drop tablel"))
 
     def loadData(self):
@@ -158,16 +161,16 @@ class Ui_MainWindow(object):
         self.model.setTable('queue')
         self.model.setEditStrategy(QSqlTableModel.OnFieldChange)
         self.model.setHeaderData(0, Qt.Horizontal, 'ID')
-        self.model.setHeaderData(1, Qt.Horizontal, "Number")
-        self.model.setHeaderData(2, Qt.Horizontal, "Enter Time")
-        self.model.setHeaderData(3, Qt.Horizontal, "Call Time")
-        self.model.setHeaderData(4, Qt.Horizontal, "Status")
-        self.model.setHeaderData(5, Qt.Horizontal, "Destination")
+        self.model.setHeaderData(1, Qt.Horizontal, "รายชื่อ")
+        self.model.setHeaderData(2, Qt.Horizontal, "เวลาเพิ่มคิว")
+        self.model.setHeaderData(3, Qt.Horizontal, "เวลาเรียกคิว")
+        self.model.setHeaderData(4, Qt.Horizontal, "สถาณะคิว")
+        self.model.setHeaderData(5, Qt.Horizontal, "ปลายทาง")
         self.model.setHeaderData(6, Qt.Horizontal, "Option")
 
         # ให้ column#5 เป็นคีย์นอกดึงตารางนอกมาแสดง
         self.model.setRelation(5, QSqlRelation(
-            "destination", "des_id", "des_name"))  
+            "destination", "des_id", "des_name"))
 
         # เรียกใช้ model เรียกใช้ได้จากทุกที่ใน class ไม่ต้องเรียก loadData()
         self.model.select()
@@ -178,22 +181,22 @@ class Ui_MainWindow(object):
         self.tableView.setColumnHidden(0, True)
         self.tableView.setCornerButtonEnabled(False)
         self.tableView.setSortingEnabled(True)
-        self.tableView.setColumnWidth(1,210)
+        self.tableView.setColumnWidth(1, 210)
 
         # เรียก fetchData เพื่อ fetch data เข้ามาใน model ให้หมด
         self.fetchData()
-       
+
         # เมื่อ click ให้เลือกทั้งแถว
-        self.tableView.setSelectionBehavior(QAbstractItemView.SelectRows)    
+        self.tableView.setSelectionBehavior(QAbstractItemView.SelectRows)
 
         # สร้าง model เรียกตาราง destination แล้วยัดเข้า combobox
         self.desModel = QSqlQueryModel()
         selectQuery = QSqlQuery()
         selectQuery.prepare('SELECT des_name FROM destination')
-        print('QUERY = ' + str(selectQuery.lastQuery()))
+        # print('QUERY = ' + str(selectQuery.lastQuery()))
         if selectQuery.exec():
-            self.desModel.setQuery(selectQuery)      
-            print('SELECT des_name COMPLETE')
+            self.desModel.setQuery(selectQuery)
+            # print('SELECT des_name COMPLETE')
             self.comboBox.setModel(self.desModel)
         else:
             print('SELECT FALSE = ' + selectQuery.lastError().text())
@@ -203,10 +206,12 @@ class Ui_MainWindow(object):
         self.ui = destination2.Ui_Dialog()
         self.ui.setupUi(self.desDialog)
 
+        self.tableView.selectRow(0)
+
     def insertData(self):
         q_number = self.lineEdit.text()
         q_localtime = time.localtime()
-        q_enter_time = time.strftime("%H:%M:%S",q_localtime)
+        q_enter_time = time.strftime("%H:%M:%S", q_localtime)
 
         # q_number ต้องไม่ใช่ค่าเว้นวรรค และ ต้องไม่ใช่ค่าว่าง
         if not q_number.isspace() and q_number != '':
@@ -217,7 +222,6 @@ class Ui_MainWindow(object):
                 insertQuery = QSqlQuery()
                 insertQuery.prepare("INSERT INTO queue " + "(q_number,q_enter_time,des_id) " +
                                     "VALUES " + f"('{q_number}','{q_enter_time}',{des_id})")
-
                 print('Query = ' + insertQuery.lastQuery())
 
                 if insertQuery.exec():
@@ -225,7 +229,7 @@ class Ui_MainWindow(object):
                     self.loadData()
                 else:
                     print('INSERT FALSE = ' + insertQuery.lastError().text())
-                    
+
             except(Error) as e:
                 print(str(time.strftime("%H:%M:%S : ", time.localtime())) +
                       'ERROR :' + str(e))
@@ -247,14 +251,13 @@ class Ui_MainWindow(object):
                     pass
         else:
             print('SELECT FALSE = ' + selectQuery.lastError().text())
-    
+
     def insertDev(self):
         j = 10
         for i in range(50):
-            q_number = random.randint(0,100000)
+            q_number = random.randint(0, 100000)
             q_enter_time = f'18:{j}:00'
             des_id = 4
-            #print(q_number)
             insertQuery = QSqlQuery()
             insertQuery.prepare("INSERT INTO queue " + "(q_number,q_enter_time,des_id) " +
                                 "VALUES " + f"('{q_number}','{q_enter_time}',{des_id})")
@@ -276,10 +279,10 @@ class Ui_MainWindow(object):
 
                 # เก็บค่า q_number จาก tableView
                 s_number = self.tableView.model().data(self.tableView.model().index(i, 1))
-                
+
                 # เทียบค่า q_number ของ lineEdit กับ tableView
                 if q_number == s_number:
-                    print('found this number.')
+                    # print('found this number.')
                     foundStatus = True
                     break
                 else:
@@ -302,13 +305,13 @@ class Ui_MainWindow(object):
                 self.tableView.model().index(current_itemUse.row(), 1))
         except:
             self.showDialog('กรุณาเลือกหมายเลขที่จะลบก่อน')
-            return 
+            return
 
         if q_number == None:
             self.showDialog('เกิดข้อผิดพลาดระหว่างการลบ')
             self.model.select()
             return
-        
+
         # ยืนยันการลบด้วย code 1024
         temp = self.confDelete(q_number)
         if temp == 1024:
@@ -319,30 +322,31 @@ class Ui_MainWindow(object):
             print('Record deleted.')
             self.showDialog('ลบหมายเลขแล้ว')
         else:
-            print('User decided cancel delete this record.')
-        
-    def confDelete(self,q_number):
+            print('User cancel delete this record.')
+
+    def confDelete(self, q_number):
         # สร้าง dialog เพื่อยืนยันการลบ และ return code ยืนยันการลบด้วย code 1024
         confMsg = QtWidgets.QMessageBox()
         confMsg.setIcon(QtWidgets.QMessageBox.Critical)
         confMsg.setText('ยืนยันที่จะลบหมายเลข : ' + q_number)
         confMsg.setWindowTitle('แจ้งเตือนการลบ')
-        confMsg.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
+        confMsg.setStandardButtons(
+            QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
         reval = confMsg.exec_()
         return(reval)
-        
+
     def btn_delClicked(self):
-        button =QtGui.QGuiApplication.focusObject()
+        button = QtGui.QGuiApplication.focusObject()
         index = self.tableView.indexAt(button.pos())
         if index.isValid():
-            print(index.row(),index.column())
+            print(index.row(), index.column())
 
-    def showDialog(self,message):
+    def showDialog(self, message):
         msg = QtWidgets.QMessageBox()
         msg.setWindowTitle('แจ้งเตือน')
         msg.setIcon(QtWidgets.QMessageBox.Information)
         msg.setText(
-            #message + str(time.strftime(" @ %H:%M:%S ", time.localtime())))
+            # message + str(time.strftime(" @ %H:%M:%S ", time.localtime())))
             message)
         msg.exec_()
 
@@ -361,33 +365,60 @@ class Ui_MainWindow(object):
 
         # ยืนยันการเรียกด้วย code 1024
         temp = self.confSpeak(q_numberText)
+        q_localtime = time.localtime()
+        q_call_time = time.strftime("%H:%M:%S", q_localtime)
         if temp == 1024:
-            engine = pyttsx3.init()
-            """ RATE"""
-            rate = engine.getProperty('rate')
-            #print (rate)
-            engine.setProperty('rate', 110)
-            """VOLUME"""
-            volume = engine.getProperty('volume')
-            #print (volume)
-            engine.setProperty('volume',1.0)
-            """VOICE"""
-            voices = 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\TTS_THAI'
-            engine.setProperty('voice',voices)
-            engine.say('ขอเชิญหมายเลข' + q_numberText + 'ที่ช่อง' + des_idText)
-            print('result = :'+ q_numberText)
-            engine.runAndWait()
-            engine.stop()
+            # pyttsx3 engine
+            # engine = pyttsx3.init()
+            # """ RATE"""
+            # rate = engine.getProperty('rate')
+            # #print (rate)
+            # engine.setProperty('rate', 100)
+            # """VOLUME"""
+            # volume = engine.getProperty('volume')
+            # #print (volume)
+            # engine.setProperty('volume',1.0)
+            # """VOICE"""
+            # voices = 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\TTS_THAI'
+            # engine.setProperty('voice',voices)
+            # engine.say('ขอเชิญหมายเลข' + q_numberText + 'ที่ช่อง' + des_idText + 'นะครับ')
+            # print('result = :'+ q_numberText)
+            # engine.runAndWait()
+            # engine.stop()
+
+            # gTTS engine
+            speech_text = 'ขอเชิญคุณ ' + q_numberText + ' ที่ช่อง ' + des_idText + ' ค่ะ'
+            tts = gTTS(speech_text, lang='th')
+            tts.save('temp.mp3')
+            speech_file = pyglet.media.load('temp.mp3', streaming=False)
+            speech_file.play()
+            sleep(speech_file.duration)  # prevent from killing
+            os.remove('temp.mp3')  # remove temperory file
+
+            try:
+                insertQuery = QSqlQuery()
+                insertQuery.prepare("UPDATE queue SET q_call_time = " +
+                                    f"'{q_call_time}'" + " , q_call_status = 1 WHERE q_number = " + f"'{q_numberText}'")
+                print('Query after speek ' + insertQuery.lastQuery())
+                if insertQuery.exec():
+                    print('UPDATE COMPLETE')
+                    self.loadData()
+                else:
+                    print('UPDATE FALSE = ' + insertQuery.lastError().text())
+            except(Error) as e:
+                print('ERROR : ' + str(e))
+
         else:
             print('User decided cancel call.')
 
-    def confSpeak(self,q_numberText):
+    def confSpeak(self, q_numberText):
         # สร้าง dialog เพื่อยืนยันการเรียกและ return code ยืนยันการเรียกด้วย code 1024
         confMsg = QtWidgets.QMessageBox()
         confMsg.setIcon(QtWidgets.QMessageBox.Warning)
         confMsg.setText('ยืนยันที่จะเรียกหมายเลข : ' + q_numberText)
         confMsg.setWindowTitle('แจ้งเตือน')
-        confMsg.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
+        confMsg.setStandardButtons(
+            QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
         reval = confMsg.exec_()
         return(reval)
 
@@ -395,10 +426,10 @@ class Ui_MainWindow(object):
         self.model.select()
         # fetch ข้อมูลจากตารางออกมาให้หมด มีผลตอนใช้ search
         while self.model.canFetchMore() == True:
-            #self.tableView.scrollToBottom()
             self.model.fetchMore()
         print('rowCoundt = ' + str(self.model.rowCount()))
         self.tableView.scrollToBottom()
+
 
 def createConnection():
     # ติดต่อ database ผ่าน driver SQLLITE
@@ -413,11 +444,12 @@ def createConnection():
         return False
     return True
 
+
 if __name__ == "__main__":
     import sys
 
-    # เรียกฟังชั่น เพื่อทดสอบติดต่อ database 
-    if not createConnection():      
+    # เรียกฟังชั่น เพื่อทดสอบติดต่อ database
+    if not createConnection():
         # หากฟังชั่น return False ให้ system exit
         sys.exit(1)
 
